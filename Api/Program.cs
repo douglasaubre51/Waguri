@@ -8,5 +8,12 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
+// endpoints
+app.MapGet("/", () => "waguri says hello!");
+
+app.MapGet("/test/{id}", (int id) =>
+{
+    return Results.Ok(id);
+});
 
 app.Run();
