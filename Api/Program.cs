@@ -1,16 +1,16 @@
 using Api.Data;
 using Api.Dtos;
 using Api.Models;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SendGrid;
-using SendGrid.Helpers.Mail;
+using MimeKit;
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 // load env variables
 DotNetEnv.Env.Load();
@@ -24,7 +24,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // add identity framework
 builder.Services
-    .AddIdentity<IdentityUser, IdentityRole>(
+    .AddIdentity<User, IdentityRole>(
     options => options.SignIn.RequireConfirmedAccount = true
         )
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -35,19 +35,24 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.UseHttpsRedirection();
 
-app.UseCors();
 app.UseAuthentication();
 //app.UseAuthorization();
+
 
 // endpoints
 app.MapGet("/", () => "waguri says hello!");
 
 // /sign-up
-app.MapPost("/sign-up", async (
+app.MapPost(
+    "/sign-up",
+    async (
     [FromBody] SignUpDto dto,
-    UserManager<User> _userManager
+    [FromServices] UserManager<User> _userManager
     ) =>
 {
     try
@@ -59,35 +64,52 @@ app.MapPost("/sign-up", async (
             UserName = dto.UserName,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
+            Email = dto.Email,
             ProjectId = dto.ProjectId
         };
 
-        var result = await _userManager.CreateAsync(user, dto.Password);
+        IdentityResult? result = await _userManager.CreateAsync(user, dto.Password);
         if (result.Succeeded is false)
         {
             Debug.WriteLine($"account for {dto.UserName} couldnot be created!");
-            return Results.BadRequest();
+            foreach (var e in result.Errors)
+                Debug.WriteLine(e.Description);
+            return Results.BadRequest(result.Errors);
         }
 
         // send confirmation email
-        var token = _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
-
-        var client = new SendGridClient(apiKey);
-        var from = new EmailAddress("boseallen192@gmail.com", "allen");
-        var subject = "Confirmation Email for Waguri Account Registration";
-        var to = new EmailAddress(user.Email, user.UserName);
-        var plainTextContent = "Lasts only for a day!";
-        var htmlContent = $"<h1>This is your account confirmation token!\n{token}</h1>";
-        var email = MailHelper.CreateSingleEmail(
-            from,
-            to,
-            subject,
-            plainTextContent,
-            htmlContent
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD");
+        var senderMail = "douglasaubre@gmail.com";
+        var senderName = "douglas aubre";
+        // craft email
+        var email = new MimeMessage();
+        email.From.Add(
+            new MailboxAddress(senderName, senderMail)
             );
-
-        var status = await client.SendEmailAsync(email);
+        email.To.Add(
+            new MailboxAddress(user.UserName, user.Email)
+            );
+        email.Subject = "Waguri account confirmation";
+        email.Body = new TextPart("html")
+        {
+            Text = $"<h1>Confirmation code :</h1><strong>{token}</strong><br>only lasts for a day!"
+        };
+        // mail client
+        Debug.WriteLine($"sending email to : {user.Email}");
+        using var smtpClient = new SmtpClient();
+        await smtpClient.ConnectAsync(
+            "smtp.gmail.com",
+            587,
+            MailKit.Security.SecureSocketOptions.StartTls
+            );
+        await smtpClient.AuthenticateAsync(
+            senderMail,
+            appPassword
+            );
+        await smtpClient.SendAsync(email);
+        Debug.WriteLine($"email has been sent to : {user.Email}");
+        await smtpClient.DisconnectAsync(true);
 
         return Results.Ok();
     }
@@ -99,7 +121,9 @@ app.MapPost("/sign-up", async (
 });
 
 // /sign-up/confirm
-app.MapPost("/sign-up/confirm", (
+app.MapPost(
+    "/sign-up/confirm",
+    async (
     [FromBody] string token
     ) =>
 {
