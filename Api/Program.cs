@@ -4,9 +4,11 @@ using Api.Models;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using MimeKit;
 using System.Diagnostics;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +81,8 @@ app.MapPost(
 
         // send confirmation email
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+        var callbackUrl = $"https://localhost:7140/sign-up/confirm/{user.Id}/{code}";
         var appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD");
         var senderMail = "douglasaubre@gmail.com";
         var senderName = "douglas aubre";
@@ -93,7 +97,7 @@ app.MapPost(
         email.Subject = "Waguri account confirmation";
         email.Body = new TextPart("html")
         {
-            Text = $"<h1>Confirmation code :</h1><strong>{token}</strong><br>only lasts for a day!"
+            Text = $"<h1>Confirmation code :</h1><strong>{callbackUrl}</strong><br>only lasts for a day!"
         };
         // mail client
         Debug.WriteLine($"sending email to : {user.Email}");
@@ -120,14 +124,38 @@ app.MapPost(
     }
 });
 
-// /sign-up/confirm
-app.MapPost(
-    "/sign-up/confirm",
+// /sign-up/confirm/{userId}/{code}
+app.MapGet(
+    "/sign-up/confirm/{userId}/{code}",
     async (
-    [FromBody] string token
+    [FromRoute] string userId,
+    [FromRoute] string code,
+    [FromServices] UserManager<User> _userManager
     ) =>
 {
+    try
+    {
+        var token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            Debug.WriteLine("user doesnot exists!");
+            return Results.NotFound("user doesnot exists!");
+        }
+        var result = await _userManager.ConfirmEmailAsync(user, token);
+        if (result.Succeeded is false)
+        {
+            Debug.WriteLine($"couldn't confirm email for : {user.UserName}");
+            return Results.Unauthorized();
+        }
 
+        return Results.Ok("email confirmed!");
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"ConfirmSignUp error:\n{ex}");
+        return Results.InternalServerError();
+    }
 });
 
 app.Run();
