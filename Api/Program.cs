@@ -34,18 +34,23 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<JwtTokenProvider>();
+
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
-//app.UseAuthorization();
 
 
 // endpoints
@@ -167,7 +172,9 @@ app.MapPost(
     async (
      string Email,
      string Password,
-     [FromServices] SignInManager<User> _signInManager
+     [FromServices] UserManager<User> _userManager,
+     [FromServices] SignInManager<User> _signInManager,
+     [FromServices] JwtTokenProvider _jwtTokenProvider
     ) =>
     {
         try
@@ -189,7 +196,10 @@ app.MapPost(
             // success
             Debug.WriteLine($"user {Email} logged in!");
 
-            return Results.Ok();
+            var user = await _userManager.FindByEmailAsync(Email);
+            var token = _jwtTokenProvider.CreateToken(user);
+
+            return Results.Ok(new { Token = token });
         }
         catch (Exception ex)
         {
