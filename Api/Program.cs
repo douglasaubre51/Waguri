@@ -26,9 +26,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // add identity framework
 builder.Services
-    .AddIdentity<User, IdentityRole>(
-    options => options.SignIn.RequireConfirmedAccount = true
-        )
+    .AddIdentity<User, IdentityRole>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+        options.User.RequireUniqueEmail = true;
+    })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
@@ -59,11 +61,11 @@ app.MapPost(
 {
     try
     {
-        Debug.WriteLine($"username: {dto.UserName}");
+        Debug.WriteLine($"username: {dto.Email}");
 
         var user = new User
         {
-            UserName = dto.UserName,
+            UserName = dto.Email,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
@@ -73,7 +75,7 @@ app.MapPost(
         IdentityResult? result = await _userManager.CreateAsync(user, dto.Password);
         if (result.Succeeded is false)
         {
-            Debug.WriteLine($"account for {dto.UserName} couldnot be created!");
+            Debug.WriteLine($"account for {dto.Email} couldnot be created!");
             foreach (var e in result.Errors)
                 Debug.WriteLine(e.Description);
             return Results.BadRequest(result.Errors);
@@ -92,7 +94,7 @@ app.MapPost(
             new MailboxAddress(senderName, senderMail)
             );
         email.To.Add(
-            new MailboxAddress(user.UserName, user.Email)
+            new MailboxAddress(user.FirstName, user.Email)
             );
         email.Subject = "Waguri account confirmation";
         email.Body = new TextPart("html")
@@ -123,7 +125,7 @@ app.MapPost(
         return Results.InternalServerError();
     }
 });
-
+// signup confirmation
 // /sign-up/confirm/{userId}/{code}
 app.MapGet(
     "/sign-up/confirm/{userId}/{code}",
@@ -155,6 +157,71 @@ app.MapGet(
     {
         Debug.WriteLine($"ConfirmSignUp error:\n{ex}");
         return Results.InternalServerError();
+    }
+});
+
+// login
+// /login
+app.MapPost(
+    "/login",
+    async (
+     string Email,
+     string Password,
+     [FromServices] SignInManager<User> _signInManager
+    ) =>
+    {
+        try
+        {
+            Debug.WriteLine($"Email: {Email}");
+            Debug.WriteLine($"Password: {Password}");
+
+            var result = await _signInManager.PasswordSignInAsync(
+                Email,
+                Password,
+                false,
+                false
+                );
+            if (result.Succeeded is false)
+            {
+                Debug.WriteLine($"invalid login attempt by : {Email}");
+                return Results.NotFound($"invalid login attempt by : {Email}");
+            }
+            // success
+            Debug.WriteLine($"user {Email} logged in!");
+
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Login error: {ex}");
+            return Results.InternalServerError();
+        }
+    });
+
+// delete user account
+// /user/delete/{UserName}
+app.MapGet("/user/delete/{UserName}",
+   async (
+       string UserName,
+       [FromServices] UserManager<User> _userManager
+    ) =>
+{
+    try
+    {
+        var user = await _userManager.FindByNameAsync(UserName);
+        if (user is null)
+            return Results.NotFound($"account {UserName} not found!");
+
+        var result = await _userManager.DeleteAsync(user);
+        if (result.Succeeded is false)
+            return Results.BadRequest("account {UserName} couldnt be deleted!");
+
+        // success
+        return Results.Ok($"account {UserName} deleted!");
+    }
+    catch (Exception ex)
+    {
+        return Results.InternalServerError(ex);
     }
 });
 
