@@ -12,6 +12,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // load env variables
@@ -203,7 +204,7 @@ app.MapPost(
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Login error: {ex}");
+            Console.WriteLine($"Login error: {ex}");
             return Results.InternalServerError();
         }
     });
