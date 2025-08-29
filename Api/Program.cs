@@ -1,6 +1,8 @@
 using Api.Data;
 using Api.Dtos;
+using Api.Dtos.AiraDtos;
 using Api.Models;
+using Api.Wrappers;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -52,11 +54,46 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
+// aira endpoints
+app.MapGet("/hello", () => "live");
+// get all user account details
+app.MapGet("/get-all-users",
+    async (
+        [FromServices] ApplicationDbContext dbContext
+        ) =>
+    {
+        try
+        {
+            // get user details from Users table
+            var users = await dbContext.Users.ToListAsync();
+            List<UserDto> dto = [];
+            foreach (var u in users)
+            {
+                dto.Add(new UserDto
+                {
+                    UserName = u.UserName,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    EmailConfirmed = u.EmailConfirmed,
+                    ProjectId = u.ProjectId
+                });
+            }
 
+            UserDtoList dtoList = new()
+            {
+                Users = dto
+            };
+            return Results.Ok(dtoList);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return Results.InternalServerError();
+        }
+    });
 
-// endpoints
 app.MapGet("/", () => "waguri says hello!");
-
 // /sign-up
 app.MapPost(
     "/sign-up",
