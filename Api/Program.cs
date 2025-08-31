@@ -56,6 +56,39 @@ app.UseHttpsRedirection();
 
 // aira endpoints
 app.MapGet("/hello", () => "live");
+
+// get cetain user
+app.MapGet(
+    "/user/find/{emailId}",
+    async (
+       [FromRoute] string emailId,
+       [FromServices] UserManager<User> _userManager
+        ) =>
+{
+    try
+    {
+        User? user = await _userManager.FindByEmailAsync(emailId);
+        if (user is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(new
+        {
+            user.FirstName,
+            user.LastName,
+            user.Email
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"findUser error: {ex}");
+        return Results.InternalServerError();
+    }
+});
+
+
+
 // get all user account details
 app.MapGet("/get-all-users",
     async (
@@ -295,7 +328,7 @@ app.MapPost(
             var user = await _userManager.FindByEmailAsync(Email);
             var token = _jwtTokenProvider.CreateToken(user);
 
-            return Results.Ok(new { Token = token });
+            return Results.Ok(token);
         }
         catch (Exception ex)
         {
