@@ -1,0 +1,123 @@
+﻿@font-face{
+    font-family:'Poppins';
+    src:url('../fonts/Poppins-Regular.ttf');
+}
+@font-face{
+    font-family:'Poppins-Light';
+    src:url('../fonts/Poppins-Light.ttf');
+}
+
+*{
+    letter-spacing:1.15px;
+    user-select:none;
+}
+
+body{
+    background-image:url('../images/vegetation.jpg');
+    background-position:center;
+    background-size:cover;
+}
+
+.container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
+    padding: 40px;
+    border-radius:8px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 80px;
+
+    min-width:400px;
+    background-color:whitesmoke;
+}
+
+.header-container{
+    display:flex;
+    flex-direction:column;
+    gap:40px;
+    align-items:center;
+}
+
+.header-1{
+    font-family:Poppins;
+    font-size:30px;
+    font-weight:900;
+}
+
+.header-2{
+    font-family:Poppins-Light;
+    font-size:24px;
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    width: max-content;
+}
+
+.label{
+    font-family:Poppins-Light;
+    color:grey;
+}
+
+.textbox{
+    border:1px solid lightgrey;
+    border-radius:4px;
+
+    padding:10px 2px;
+    width:200px;
+
+    transition-duration:.2s;
+    outline:none;
+}
+.textbox:focus{
+    transition-duration:.2s;
+
+    outline:none;
+    border:1px solid lightskyblue;
+    box-shadow:rgba(0,0,0,.2) 1px 1px 10px;
+}
+.textbox:hover{
+    border:1px solid lightskyblue;
+    box-shadow:rgba(0,0,0,.2) 1px 1px 10px;
+}
+
+.secondary-btn{
+    cursor:pointer;
+
+    width:200px;
+
+    padding:10px 0px;
+    border-radius:4px;
+    border:none;
+
+    font-family:Poppins;
+
+    background-color:#98BFD8;
+    color:whitesmoke;
+
+    transition-duration:.2s;
+}
+    .secondary-btn:hover {
+        transition-duration:.2s;
+
+        background-color:lightskyblue;
+        box-shadow:rgba(0,0,0,.2) 1px 1px 10px;
+    }
+    .secondary-btn:focus{
+        outline:none;
+        box-shadow:rgba(0,0,0,.2) 1px 1px 10px;
+    }

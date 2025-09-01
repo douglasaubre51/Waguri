@@ -17,6 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add Razor pages
+builder.Services.AddRazorPages();
+builder.Services.AddControllersWithViews();
+
 // load env variables
 DotNetEnv.Env.Load();
 
@@ -363,5 +367,13 @@ app.MapGet("/user/delete/{UserName}",
         return Results.InternalServerError(ex);
     }
 });
+
+app.MapRazorPages();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Auth}/{action=Login}/{id?}"
+    ).WithStaticAssets();
+
+app.MapStaticAssets();
 
 app.Run();
