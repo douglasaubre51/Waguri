@@ -2,6 +2,8 @@ using Api.Data;
 using Api.Dtos;
 using Api.Dtos.AiraDtos;
 using Api.Models;
+using Api.Repositories;
+using Api.Services;
 using Api.Wrappers;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
@@ -14,6 +16,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// session
+builder.Services.AddSession();
+
+// swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -41,27 +47,58 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+// jwt auth
 builder.Services.AddAuthentication().AddJwtBearer();
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<JwtTokenProvider>();
 
+// add repositories
+builder.Services.AddScoped<ClientRepository>();
+
+// add session service
+builder.Services.AddScoped<SessionService>();
+
+// add auth service
+builder.Services.AddScoped<AuthService>();
+
+// add client storage service
+builder.Services.AddScoped<ClientStorageService>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
 app.UseAuthentication();
 app.UseAuthorization();
 
+// session
+builder.Services.AddSession();
+
+// swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// https
 app.UseHttpsRedirection();
 
-// aira endpoints
+// razor pages
+app.MapRazorPages();
+app.MapStaticAssets();
+
+// default route
+app.MapControllerRoute(
+    "default",
+    "{controller=Auth}/{action=Login}"
+    );
+
+// AIRA endpoints
+
+// start
+app.MapGet("/", () => "waguri says hello!");
+
+// waguri status
 app.MapGet("/hello", () => "live");
 
-// get cetain user
+// find user
 app.MapGet(
     "/user/find/{emailId}",
     async (
@@ -90,8 +127,6 @@ app.MapGet(
         return Results.InternalServerError();
     }
 });
-
-
 
 // get all user account details
 app.MapGet("/get-all-users",
@@ -129,67 +164,50 @@ app.MapGet("/get-all-users",
             return Results.InternalServerError();
         }
     });
-// manually confirm user account
-app.MapGet(
-    "/user/confirm/{userName}",
+
+// login
+app.MapPost(
+    "/login",
     async (
-        string userName,
-        [FromServices] UserManager<User> _userManager
-        ) =>
+     string Email,
+     string Password,
+     [FromServices] UserManager<User> _userManager,
+     [FromServices] SignInManager<User> _signInManager,
+     [FromServices] JwtTokenProvider _jwtTokenProvider
+    ) =>
     {
         try
         {
-            var user = await _userManager.FindByNameAsync(userName);
-            // send confirmation email
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-            var callbackUrl = $"http://localhost:5000/sign-up/confirm/{user.Id}/{code}";
-            var appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD");
-            var senderMail = "douglasaubre@gmail.com";
-            var senderName = "douglas aubre";
-            // craft email
-            var email = new MimeMessage();
-            email.From.Add(
-                new MailboxAddress(senderName, senderMail)
-                );
-            email.To.Add(
-                new MailboxAddress(user.FirstName, user.Email)
-                );
-            email.Subject = "Waguri account confirmation";
-            email.Body = new TextPart("html")
-            {
-                Text = $"<h1>Confirmation code :</h1><strong>{callbackUrl}</strong><br>only lasts for a day!"
-            };
-            // mail client
-            Debug.WriteLine($"sending email to : {user.Email}");
-            using var smtpClient = new SmtpClient();
-            await smtpClient.ConnectAsync(
-                "smtp.gmail.com",
-                587,
-                MailKit.Security.SecureSocketOptions.StartTls
-                );
-            await smtpClient.AuthenticateAsync(
-                senderMail,
-                appPassword
-                );
-            await smtpClient.SendAsync(email);
-            Debug.WriteLine($"email has been sent to : {user.Email}");
-            await smtpClient.DisconnectAsync(true);
+            Debug.WriteLine($"Email: {Email}");
+            Debug.WriteLine($"Password: {Password}");
 
-            return Results.Ok();
+            var result = await _signInManager.PasswordSignInAsync(
+                Email,
+                Password,
+                false,
+                false
+                );
+            if (result.Succeeded is false)
+            {
+                Debug.WriteLine($"invalid login attempt by : {Email}");
+                return Results.NotFound($"invalid login attempt by : {Email}");
+            }
+            // success
+            Debug.WriteLine($"user {Email} logged in!");
+
+            var user = await _userManager.FindByEmailAsync(Email);
+            var token = _jwtTokenProvider.CreateToken(user);
+
+            return Results.Ok(token);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"ConfirmUser error:\n{ex}");
+            Console.WriteLine($"Login error: {ex}");
             return Results.InternalServerError();
         }
     });
 
-
-
-
-app.MapGet("/", () => "waguri says hello!");
-// /sign-up
+// sign up
 app.MapPost(
     "/sign-up",
     async (
@@ -263,86 +281,31 @@ app.MapPost(
         return Results.InternalServerError();
     }
 });
-// signup confirmation
-// /sign-up/confirm/{userId}/{code}
+
+// trigger confirm user account
 app.MapGet(
-    "/sign-up/confirm/{userId}/{code}",
+    "/user/confirm/{userName}",
     async (
-    [FromRoute] string userId,
-    [FromRoute] string code,
-    [FromServices] UserManager<User> _userManager
-    ) =>
-{
-    try
-    {
-        var token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user is null)
-        {
-            Debug.WriteLine("user doesnot exists!");
-            return Results.NotFound("user doesnot exists!");
-        }
-        var result = await _userManager.ConfirmEmailAsync(user, token);
-        if (result.Succeeded is false)
-        {
-            Debug.WriteLine($"couldn't confirm email for : {user.UserName}");
-            return Results.Unauthorized();
-        }
-
-        return Results.Ok("email confirmed!");
-    }
-    catch (Exception ex)
-    {
-        Debug.WriteLine($"ConfirmSignUp error:\n{ex}");
-        return Results.InternalServerError();
-    }
-});
-
-// login
-// /login
-app.MapPost(
-    "/login",
-    async (
-     string Email,
-     string Password,
-     [FromServices] UserManager<User> _userManager,
-     [FromServices] SignInManager<User> _signInManager,
-     [FromServices] JwtTokenProvider _jwtTokenProvider
-    ) =>
+        string userName,
+        [FromServices] UserManager<User> _userManager,
+        [FromServices] AuthService _authService
+        ) =>
     {
         try
         {
-            Debug.WriteLine($"Email: {Email}");
-            Debug.WriteLine($"Password: {Password}");
+            var user = await _userManager.FindByNameAsync(userName);
+            await _authService.GetConfirmationEmail(user);
 
-            var result = await _signInManager.PasswordSignInAsync(
-                Email,
-                Password,
-                false,
-                false
-                );
-            if (result.Succeeded is false)
-            {
-                Debug.WriteLine($"invalid login attempt by : {Email}");
-                return Results.NotFound($"invalid login attempt by : {Email}");
-            }
-            // success
-            Debug.WriteLine($"user {Email} logged in!");
-
-            var user = await _userManager.FindByEmailAsync(Email);
-            var token = _jwtTokenProvider.CreateToken(user);
-
-            return Results.Ok(token);
+            return Results.Ok();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Login error: {ex}");
+            Debug.WriteLine($"ConfirmUser error:\n{ex}");
             return Results.InternalServerError();
         }
     });
 
 // delete user account
-// /user/delete/{UserName}
 app.MapGet("/user/delete/{UserName}",
    async (
        string UserName,
@@ -368,12 +331,5 @@ app.MapGet("/user/delete/{UserName}",
     }
 });
 
-app.MapRazorPages();
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}"
-    ).WithStaticAssets();
-
-app.MapStaticAssets();
 
 app.Run();
