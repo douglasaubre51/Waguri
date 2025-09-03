@@ -8,9 +8,13 @@ namespace Api.Repositories
 
         public string? GetClientUrlById(string id)
         {
-            return _context.Clients
-                .Where(i => i.Id == id)
-                .Select(i => i.Url).ToString();
+            var url = _context.Clients
+                .Where(i => i.ProjectId == id)
+                .Select(i => i.Url).SingleOrDefault();
+
+            Console.WriteLine("project url: " + url);
+
+            return url;
         }
     }
 }

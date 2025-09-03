@@ -23,8 +23,7 @@ builder.Services.AddSession();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add Razor pages
-builder.Services.AddRazorPages();
+// Add mvc controllers
 builder.Services.AddControllersWithViews();
 
 // load env variables
@@ -64,31 +63,37 @@ builder.Services.AddScoped<AuthService>();
 // add client storage service
 builder.Services.AddScoped<ClientStorageService>();
 
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// https
+app.UseHttpsRedirection();
+
+// css,js etc 
+app.UseStaticFiles();
+
+// api routing
+app.UseRouting();
+
+// auth and session
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
-
-// session
-builder.Services.AddSession();
 
 // swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// https
-app.UseHttpsRedirection();
-
-// razor pages
-app.MapRazorPages();
-app.MapStaticAssets();
+// mvc controller routing
+app.MapControllers();
 
 // default route
 app.MapControllerRoute(
-    "default",
-    "{controller=Auth}/{action=Login}"
+    name: "default",
+    pattern: "{controller=Auth}/{action=Login}/{id?}"
     );
+
+
 
 // AIRA endpoints
 
@@ -169,8 +174,7 @@ app.MapGet("/get-all-users",
 app.MapPost(
     "/login",
     async (
-     string Email,
-     string Password,
+     [FromBody] LoginDto dto,
      [FromServices] UserManager<User> _userManager,
      [FromServices] SignInManager<User> _signInManager,
      [FromServices] JwtTokenProvider _jwtTokenProvider
@@ -178,24 +182,24 @@ app.MapPost(
     {
         try
         {
-            Debug.WriteLine($"Email: {Email}");
-            Debug.WriteLine($"Password: {Password}");
+            Debug.WriteLine($"Email: {dto.Email}");
+            Debug.WriteLine($"Password: {dto.Password}");
 
             var result = await _signInManager.PasswordSignInAsync(
-                Email,
-                Password,
+                dto.Email,
+                dto.Password,
                 false,
                 false
                 );
             if (result.Succeeded is false)
             {
-                Debug.WriteLine($"invalid login attempt by : {Email}");
-                return Results.NotFound($"invalid login attempt by : {Email}");
+                Debug.WriteLine($"invalid login attempt by : {dto.Email}");
+                return Results.NotFound($"invalid login attempt by : {dto.Email}");
             }
             // success
-            Debug.WriteLine($"user {Email} logged in!");
+            Debug.WriteLine($"user {dto.Email} logged in!");
 
-            var user = await _userManager.FindByEmailAsync(Email);
+            var user = await _userManager.FindByEmailAsync(dto.Email);
             var token = _jwtTokenProvider.CreateToken(user);
 
             return Results.Ok(token);
@@ -286,7 +290,7 @@ app.MapPost(
 app.MapGet(
     "/user/confirm/{userName}",
     async (
-        string userName,
+        [FromRoute] string userName,
         [FromServices] UserManager<User> _userManager,
         [FromServices] AuthService _authService
         ) =>
@@ -308,7 +312,7 @@ app.MapGet(
 // delete user account
 app.MapGet("/user/delete/{UserName}",
    async (
-       string UserName,
+       [FromRoute] string UserName,
        [FromServices] UserManager<User> _userManager
     ) =>
 {

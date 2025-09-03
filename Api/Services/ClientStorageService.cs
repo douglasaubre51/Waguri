@@ -2,9 +2,9 @@
 
 namespace Api.Services
 {
-    public class ClientStorageService(HttpClient client)
+    public class ClientStorageService()
     {
-        private readonly HttpClient _client = client;
+        private readonly HttpClient _client = new();
 
         public async Task<bool> CreateUserOnClient(string url, UserDto user)
         {

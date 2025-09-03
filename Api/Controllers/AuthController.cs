@@ -6,34 +6,39 @@ using Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Diagnostics;
 using System.Text;
 
 namespace Api.Controllers
 {
+    [Route("[controller]")]
     public class AuthController(
         UserManager<User> userManager,
         SignInManager<User> signInManager,
         JwtTokenProvider jwtTokenProvider,
-        ClientRepository clientRepository,
         SessionService sessionService,
         AuthService authService,
-        ClientStorageService clientStorageService
+        ClientStorageService clientStorageService,
+        ClientRepository clientRepository
         ) : Controller
     {
         private readonly SignInManager<User> _signInManager = signInManager;
         private readonly UserManager<User> _userManager = userManager;
         private readonly JwtTokenProvider _jwtTokenProvider = jwtTokenProvider;
-        private readonly ClientRepository _clientRepository = clientRepository;
         private readonly SessionService _sessionService = sessionService;
         private readonly AuthService _authService = authService;
         private readonly ClientStorageService _clientStorageService = clientStorageService;
+        private readonly ClientRepository _clientRepository = clientRepository;
 
 
-        [HttpGet("{projectId}")]
+        [HttpGet("Login/{projectId}")]
         public IActionResult Login([FromRoute] string projectId)
         {
             try
             {
+                Console.WriteLine("1.hit Login(get)!");
+                Console.WriteLine("projectId : " + projectId);
+
                 var url = _clientRepository.GetClientUrlById(projectId);
                 HttpContext.Session.SetString("projectId", projectId);
                 HttpContext.Session.SetString("projectUrl", url);
@@ -42,28 +47,27 @@ namespace Api.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Login(get) error: {ex}");
-                return RedirectToActionPermanent("Failure", "Error");
+                Debug.WriteLine($"Login(get) error: {ex}");
+                return View();
             }
         }
 
         // Login view for redirecting from EmailConfirmation view!
-        [HttpGet()]
+        [HttpGet("Login")]
         public IActionResult Login()
         {
-            if (_sessionService.IsExpired(HttpContext) is true)
-                return RedirectToActionPermanent("Failure", "Error");
-
+            Console.WriteLine("hit login(get) emailconfirm!");
             return View();
         }
 
-        [HttpPost()]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login([FromForm] LoginDto dto)
         {
             try
             {
+                Console.WriteLine("3.hit Login(post)!");
                 if (_sessionService.IsExpired(HttpContext) is true)
-                    return RedirectToActionPermanent("Failure", "Error");
+                    Console.WriteLine("session expired -Login");
                 if (ModelState.IsValid is false)
                     return View(dto);
 
@@ -85,28 +89,30 @@ namespace Api.Controllers
                 url += $"/login/{token}";
 
                 // go back to client!
-                return RedirectPermanent(url);
+                return Redirect(url);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Login error: {ex}");
-                return RedirectToActionPermanent("Failure", "Error");
+                return View();
             }
         }
 
-        [HttpGet]
+        [HttpGet("SignUp")]
         public IActionResult SignUp()
         {
+            Console.WriteLine("4.hit SignUp(get)!");
             return View();
         }
 
-        [HttpPost]
+        [HttpPost("SignUp")]
         public async Task<IActionResult> SignUp([FromForm] SignUpDto dto)
         {
             try
             {
+                Console.WriteLine("5.hit SignUp(post)!");
                 if (_sessionService.IsExpired(HttpContext) is true)
-                    return RedirectToActionPermanent("Failure", "Error");
+                    Console.WriteLine("session expired -SignUp");
                 if (ModelState.IsValid is false)
                     return View(dto);
 
@@ -125,50 +131,52 @@ namespace Api.Controllers
                     foreach (var e in result.Errors)
                         Console.WriteLine(e.Description);
 
-                    return RedirectToActionPermanent("Failure", "Error");
+                    return View();
                 }
 
                 var dbUser = await _userManager.FindByEmailAsync(dto.EmailId);
                 await _authService.GetConfirmationEmail(dbUser);
 
-                return RedirectToActionPermanent("EmailConfirmation");
+                return RedirectToAction("EmailConfirmation");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"SignUp error: {ex}");
-                return RedirectToActionPermanent("Failure", "Error");
+                return View();
             }
         }
 
-        [HttpGet]
+        [HttpGet("EmailConfirmation")]
         public IActionResult EmailConfirmation()
         {
+            Console.WriteLine("6.hit EmailConfirmation(get)!");
             return View();
         }
 
-        [HttpGet("/sign-up/confirm/{userId}/{code}")]
-        public async Task<IActionResult> EmailConfirmed(
+        [HttpGet("ConfirmEmail/{userId}/{code}")]
+        public async Task<IActionResult> ConfirmEmail(
             [FromRoute] string userId,
             [FromRoute] string code
             )
         {
             try
             {
+                Console.WriteLine("7.hit EmailConfirmed(get)!");
                 if (_sessionService.IsExpired(HttpContext) is true)
-                    return RedirectToActionPermanent("Failure", "Error");
+                    Console.WriteLine("session expired -SignUp");
 
                 var token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user is null)
                 {
                     Console.WriteLine("user doesnot exists!");
-                    return RedirectToActionPermanent("Failure", "Error");
+                    return View();
                 }
                 var result = await _userManager.ConfirmEmailAsync(user, token);
                 if (result.Succeeded is false)
                 {
                     Console.WriteLine($"couldn't confirm email for : {user.UserName}");
-                    return RedirectToActionPermanent("Failure", "Error");
+                    return View();
                 }
 
                 // save user to client db
@@ -184,15 +192,15 @@ namespace Api.Controllers
                 if (status is false)
                 {
                     Console.WriteLine($"couldn't create user account on client");
-                    return RedirectToActionPermanent("Failure", "Error");
+                    return View();
                 }
 
                 return View();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ConfirmSignUp error:\n{ex}");
-                return RedirectToActionPermanent("Failure", "Error");
+                Console.WriteLine($"ConfirmEmail error:\n{ex}");
+                return View();
             }
         }
     }

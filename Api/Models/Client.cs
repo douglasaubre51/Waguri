@@ -1,9 +1,13 @@
-﻿namespace Api.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Api.Models
 {
     public class Client
     {
-        public string Id { get; set; } = string.Empty;
+        [Key]
+        public int Id { get; set; }
         public string Url { get; set; } = string.Empty;
 
+        public string ProjectId { get; set; } = string.Empty;
     }
 }
