@@ -1,4 +1,7 @@
-﻿<link href="~/css/Login.css" rel="stylesheet" />
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+@model Api.ViewModels.LoginViewModel
+
+<link href="~/css/Login.css" rel="stylesheet" />
 
 <title>
     Login
@@ -13,27 +16,38 @@
             Login
         </span>
     </div>
+
     @* form container *@
-    <div class="form-container">
+    <form asp-controller="Auth" asp-action="Login" method="post">
+        <div class="form-container">
+            <div class="form-group">
+                <span class="label">
+                    email id
+                </span>
+                <input class="textbox"
+                    type="email"
+                       asp-for="Email" />
+                <span asp-validation-for="Email"></span>
+            </div>
 
-        <div class="form-group">
-            <span class="label">
-                email id
-            </span>
-            <input class="textbox" type='text' />
+            <div class="form-group">
+                <span class="label">
+                    password
+                </span>
+                <input class="textbox"
+                       asp-for="Password"
+                       type="password" />
+                <span asp-validation-for="Password"></span>
+            </div>
+            <button type="submit" class="secondary-btn">
+                continue
+            </button>
         </div>
+    </form>
 
-        <div class="form-group">
-            <span class="label">
-                password
-            </span>
-            <input class="textbox" type='password' />
-        </div>
-
-    </div>
-    <button class="secondary-btn">
-        continue
-    </button>
+    <span class="error-msg">
+        @Model.ErrorMessage
+    </span>
 </div>
 
 

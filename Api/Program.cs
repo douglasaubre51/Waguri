@@ -55,7 +55,7 @@ builder.Services.AddSingleton<JwtTokenProvider>();
 builder.Services.AddScoped<ClientRepository>();
 
 // add session service
-builder.Services.AddScoped<SessionService>();
+builder.Services.AddSingleton<SessionService>();
 
 // add auth service
 builder.Services.AddScoped<AuthService>();

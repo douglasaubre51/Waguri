@@ -3,6 +3,7 @@ using Api.Dtos.WaguriDtos;
 using Api.Models;
 using Api.Repositories;
 using Api.Services;
+using Api.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -43,16 +44,16 @@ namespace Api.Controllers
                 HttpContext.Session.SetString("projectId", projectId);
                 HttpContext.Session.SetString("projectUrl", url);
 
-                return View();
+                return View(new LoginViewModel());
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Login(get) error: {ex}");
-                return View();
+                return View(new LoginViewModel());
             }
         }
 
-        // Login view for redirecting from EmailConfirmation view!
+        //Login view for redirecting from EmailConfirmation view!
         [HttpGet("Login")]
         public IActionResult Login()
         {
@@ -60,8 +61,8 @@ namespace Api.Controllers
             return View();
         }
 
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromForm] LoginDto dto)
+        [HttpPost("Login/{projectId}")]
+        public async Task<IActionResult> Login(LoginViewModel viewModel)
         {
             try
             {
@@ -69,24 +70,28 @@ namespace Api.Controllers
                 if (_sessionService.IsExpired(HttpContext) is true)
                     Console.WriteLine("session expired -Login");
                 if (ModelState.IsValid is false)
-                    return View(dto);
+                    return View(viewModel);
+
+                Console.WriteLine($"email id: {viewModel.Email}");
 
                 var result = await _signInManager.PasswordSignInAsync(
-                    dto.EmailId,
-                    dto.Password,
+                    viewModel.Email,
+                    viewModel.Password,
                     false,
                     false
                     );
                 if (result.Succeeded is false)
                 {
-                    dto.ErrorMessage = "invalid email or password!";
-                    return View(dto);
+                    viewModel.ErrorMessage = "invalid email or password!";
+                    return View(viewModel);
                 }
+                Console.WriteLine("sign in success!");
                 // login success
-                var user = await _userManager.FindByEmailAsync(dto.EmailId);
+                var user = await _userManager.FindByEmailAsync(viewModel.Email);
                 var token = _jwtTokenProvider.CreateToken(user);
                 string url = HttpContext.Session.GetString("projectUrl");
                 url += $"/login/{token}";
+                Console.WriteLine("creating token!");
 
                 // go back to client!
                 return Redirect(url);
@@ -94,6 +99,7 @@ namespace Api.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Login error: {ex}");
+                viewModel.ErrorMessage = "error!";
                 return View();
             }
         }
