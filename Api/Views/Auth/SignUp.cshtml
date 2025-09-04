@@ -1,4 +1,7 @@
-﻿<link href="~/css/SignUp.css" rel="stylesheet" />
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+@model Api.ViewModels.SignUpViewModel
+
+<link href="~/css/SignUp.css" rel="stylesheet" />
 
 <title>
     Sign up
@@ -14,45 +17,67 @@
         </span>
     </div>
 
-    <div class="form-container">
-        <div class="form-group">
-            <span class="label">
-                first name
-            </span>
-            <input class="textbox" type="text" />
-        </div>
+    <form asp-action="SignUp" asp-controller="Auth" method="post">
+        <div class="form-container">
+            <div class="form-group">
+                <span class="label">
+                    first name
+                </span>
+                <input class="textbox"
+                       asp-for="FirstName" />
+                <span class="error-msg"
+                      asp-validation-for="FirstName"></span>
+            </div>
 
-        <div class="form-group">
-            <span class="label">
-                last name
-            </span>
-            <input class="textbox" type="text" />
-        </div>
+            <div class="form-group">
+                <span class="label">
+                    last name
+                </span>
+                <input class="textbox"
+                       asp-for="LastName" />
+                <span class="error-msg"
+                      asp-validation-for="LastName"></span>
+            </div>
 
-        <div class="form-group">
-            <span class="label">
-                email id
-            </span>
-            <input class="textbox" type="text" />
-        </div>
+            <div class="form-group">
+                <span class="label">
+                    email id
+                </span>
+                <input class="textbox"
+                       asp-for="Email" />
+                <span class="error-msg"
+                      asp-validation-for="Email"></span>
+            </div>
 
-        <div class="form-group">
-            <span class="label">
-                password
-            </span>
-            <input class="textbox" type="password" />
-        </div>
+            <div class="form-group">
+                <span class="label">
+                    password
+                </span>
+                <input class="textbox"
+                       asp-for="Password" />
+                <span class="error-msg"
+                      asp-validation-for="Password"></span>
+            </div>
 
-        <div class="form-group">
-            <span class="label">
-                check password
-            </span>
-            <input class="textbox" type="password" />
-        </div>
+            <div class="form-group">
+                <span class="label">
+                    check password
+                </span>
+                <input class="textbox"
+                       asp-for="ConfirmPassword" />
+                <span class="error-msg"
+                      asp-validation-for="ConfirmPassword"></span>
+            </div>
 
-        <button class="secondary-btn">
-            continue
-        </button>
-    </div>
+            <button class="secondary-btn"
+                    type="submit">
+                continue
+            </button>
+
+            <span class="error-msg">
+                @Model.ErrorMessage
+            </span>
+        </div>
+    </form>
 
 </div>

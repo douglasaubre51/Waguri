@@ -25,7 +25,7 @@
                     email id
                 </span>
                 <input class="textbox"
-                    type="email"
+                       type="email"
                        asp-for="Email" />
                 <span asp-validation-for="Email"></span>
             </div>
@@ -42,6 +42,11 @@
             <button type="submit" class="secondary-btn">
                 continue
             </button>
+            <a class="tertiary-btn"
+               asp-controller="Auth"
+               asp-action="SignUp">
+                don't have an account?
+            </a>
         </div>
     </form>
 

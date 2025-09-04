@@ -1,5 +1,4 @@
 ﻿using Api.Data;
-using Api.Dtos.WaguriDtos;
 using Api.Models;
 using Api.Repositories;
 using Api.Services;
@@ -53,16 +52,10 @@ namespace Api.Controllers
             }
         }
 
-        //Login view for redirecting from EmailConfirmation view!
-        [HttpGet("Login")]
-        public IActionResult Login()
-        {
-            Console.WriteLine("hit login(get) emailconfirm!");
-            return View();
-        }
-
         [HttpPost("Login/{projectId}")]
-        public async Task<IActionResult> Login(LoginViewModel viewModel)
+        public async Task<IActionResult> Login(
+            LoginViewModel viewModel
+            )
         {
             try
             {
@@ -108,11 +101,11 @@ namespace Api.Controllers
         public IActionResult SignUp()
         {
             Console.WriteLine("4.hit SignUp(get)!");
-            return View();
+            return View(new SignUpViewModel());
         }
 
         [HttpPost("SignUp")]
-        public async Task<IActionResult> SignUp([FromForm] SignUpDto dto)
+        public async Task<IActionResult> SignUp(SignUpViewModel viewModel)
         {
             try
             {
@@ -120,27 +113,30 @@ namespace Api.Controllers
                 if (_sessionService.IsExpired(HttpContext) is true)
                     Console.WriteLine("session expired -SignUp");
                 if (ModelState.IsValid is false)
-                    return View(dto);
+                    return View(viewModel);
 
                 var user = new User
                 {
-                    UserName = dto.EmailId,
-                    FirstName = dto.FirstName,
-                    LastName = dto.LastName,
-                    Email = dto.EmailId,
+                    UserName = viewModel.Email,
+                    FirstName = viewModel.FirstName,
+                    LastName = viewModel.LastName,
+                    Email = viewModel.Email,
                     ProjectId = HttpContext.Session.GetString("projectId")
                 };
-                IdentityResult? result = await _userManager.CreateAsync(user, dto.Password);
+                IdentityResult? result = await _userManager.CreateAsync(user, viewModel.Password);
                 if (result.Succeeded is false)
                 {
-                    Console.WriteLine($"account for {dto.EmailId} couldnot be created!");
+                    Console.WriteLine($"account for {viewModel.Email} couldnot be created!");
                     foreach (var e in result.Errors)
+                    {
+                        viewModel.ErrorMessage += e.Description;
                         Console.WriteLine(e.Description);
+                    }
 
-                    return View();
+                    return View(viewModel);
                 }
 
-                var dbUser = await _userManager.FindByEmailAsync(dto.EmailId);
+                var dbUser = await _userManager.FindByEmailAsync(viewModel.Email);
                 await _authService.GetConfirmationEmail(dbUser);
 
                 return RedirectToAction("EmailConfirmation");
@@ -148,7 +144,7 @@ namespace Api.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"SignUp error: {ex}");
-                return View();
+                return View(viewModel);
             }
         }
 
@@ -159,6 +155,14 @@ namespace Api.Controllers
             return View();
         }
 
+        [HttpGet]
+        public IActionResult RedirectToLogin()
+        {
+            var id = _sessionService.GetProjectId(HttpContext);
+            return RedirectToAction("Login", new { projectId = id });
+        }
+
+        // processess user token 
         [HttpGet("ConfirmEmail/{userId}/{code}")]
         public async Task<IActionResult> ConfirmEmail(
             [FromRoute] string userId,

@@ -1,4 +1,6 @@
-﻿<title>
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+
+<title>
     Account Confirmation
 </title>
 
@@ -15,6 +17,11 @@
 </h3>
 
 <h3>
-    if email is already confirmed <a asp-action="Login" asp-controller="Auth">click this link to go to login</a>
+    if email is already confirmed,<br />
+    <a 
+        asp-action="RedirectToLogin" 
+        asp-controller="Auth">
+        click this link to go back to login!
+    </a>
 </h3>
 
