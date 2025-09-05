@@ -39,9 +39,13 @@ namespace Api.Controllers
                 Console.WriteLine("1.hit Login(get)!");
                 Console.WriteLine("projectId : " + projectId);
 
-                var url = _clientRepository.GetClientUrlById(projectId);
+                var clientUrl = _clientRepository.GetClientUrlById(projectId);
+                var apiUrl = _clientRepository.GetApiUrlById(projectId);
                 HttpContext.Session.SetString("projectId", projectId);
-                HttpContext.Session.SetString("projectUrl", url);
+                HttpContext.Session.SetString("projectUrl", clientUrl);
+                HttpContext.Session.SetString("apiUrl", apiUrl);
+                Console.WriteLine(clientUrl);
+                Console.WriteLine(apiUrl);
 
                 return View(new LoginViewModel());
             }
@@ -65,8 +69,6 @@ namespace Api.Controllers
                 if (ModelState.IsValid is false)
                     return View(viewModel);
 
-                Console.WriteLine($"email id: {viewModel.Email}");
-
                 var result = await _signInManager.PasswordSignInAsync(
                     viewModel.Email,
                     viewModel.Password,
@@ -78,13 +80,15 @@ namespace Api.Controllers
                     viewModel.ErrorMessage = "invalid email or password!";
                     return View(viewModel);
                 }
-                Console.WriteLine("sign in success!");
-                // login success
+                // craft token
                 var user = await _userManager.FindByEmailAsync(viewModel.Email);
-                var token = _jwtTokenProvider.CreateToken(user);
-                string url = HttpContext.Session.GetString("projectUrl");
+                var audience = _sessionService.GetApiUrl(HttpContext);
+                var issuer = _clientRepository.GetApiUrlById(
+                    _sessionService.GetProjectId(HttpContext)
+                    );
+                var token = _jwtTokenProvider.CreateToken(user, audience, issuer);
+                string url = _sessionService.GetApiUrl(HttpContext);
                 url += $"/login/{token}";
-                Console.WriteLine("creating token!");
 
                 // go back to client!
                 return Redirect(url);
@@ -196,8 +200,9 @@ namespace Api.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName
                 };
-                string url = _sessionService.GetProjectUrl(HttpContext);
-                url += "/user/create";
+                string url = _sessionService.GetApiUrl(HttpContext);
+                url += "/api/user/create";
+                Console.WriteLine("create user on client url: " + url);
                 bool status = await _clientStorageService.CreateUserOnClient(url, dto);
                 if (status is false)
                 {

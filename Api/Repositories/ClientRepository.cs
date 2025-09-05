@@ -7,14 +7,12 @@ namespace Api.Repositories
         private readonly ApplicationDbContext _context = context;
 
         public string? GetClientUrlById(string id)
-        {
-            var url = _context.Clients
+            => _context.Clients
                 .Where(i => i.ProjectId == id)
                 .Select(i => i.Url).SingleOrDefault();
-
-            Console.WriteLine("project url: " + url);
-
-            return url;
-        }
+        public string? GetApiUrlById(string id)
+            => _context.Clients
+            .Where(i => i.ProjectId == id)
+            .Select(x => x.ApiUrl).SingleOrDefault();
     }
 }

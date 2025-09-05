@@ -49,7 +49,7 @@ builder.Services
 // jwt auth
 builder.Services.AddAuthentication().AddJwtBearer();
 builder.Services.AddAuthorization();
-builder.Services.AddSingleton<JwtTokenProvider>();
+builder.Services.AddScoped<JwtTokenProvider>();
 
 // add repositories
 builder.Services.AddScoped<ClientRepository>();
@@ -94,16 +94,43 @@ app.MapControllerRoute(
     );
 
 
-
-// AIRA endpoints
-
 // start
 app.MapGet("/", () => "waguri says hello!");
 
+// AIRA endpoints
 // waguri status
+
 app.MapGet("/hello", () => "live");
 
 // find user
+
+app.MapGet(
+    "/find-user/{userId}",
+    async (
+       [FromRoute] string userId,
+       [FromServices] UserManager<User> _userManager
+        ) =>
+{
+    try
+    {
+        User? user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+            return Results.NotFound();
+
+        return Results.Ok(new
+        {
+            user.FirstName,
+            user.LastName,
+            user.Email
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"findUser error: {ex}");
+        return Results.InternalServerError();
+    }
+});
+
 app.MapGet(
     "/user/find/{emailId}",
     async (
@@ -134,6 +161,7 @@ app.MapGet(
 });
 
 // get all user account details
+
 app.MapGet("/get-all-users",
     async (
         [FromServices] ApplicationDbContext dbContext
@@ -170,48 +198,8 @@ app.MapGet("/get-all-users",
         }
     });
 
-// login
-app.MapPost(
-    "/login",
-    async (
-     [FromBody] LoginDto dto,
-     [FromServices] UserManager<User> _userManager,
-     [FromServices] SignInManager<User> _signInManager,
-     [FromServices] JwtTokenProvider _jwtTokenProvider
-    ) =>
-    {
-        try
-        {
-            Debug.WriteLine($"Email: {dto.Email}");
-            Debug.WriteLine($"Password: {dto.Password}");
-
-            var result = await _signInManager.PasswordSignInAsync(
-                dto.Email,
-                dto.Password,
-                false,
-                false
-                );
-            if (result.Succeeded is false)
-            {
-                Debug.WriteLine($"invalid login attempt by : {dto.Email}");
-                return Results.NotFound($"invalid login attempt by : {dto.Email}");
-            }
-            // success
-            Debug.WriteLine($"user {dto.Email} logged in!");
-
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-            var token = _jwtTokenProvider.CreateToken(user);
-
-            return Results.Ok(token);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Login error: {ex}");
-            return Results.InternalServerError();
-        }
-    });
-
 // sign up
+
 app.MapPost(
     "/sign-up",
     async (
@@ -287,6 +275,7 @@ app.MapPost(
 });
 
 // trigger confirm user account
+
 app.MapGet(
     "/user/confirm/{userName}",
     async (
@@ -310,6 +299,7 @@ app.MapGet(
     });
 
 // delete user account
+
 app.MapGet("/user/delete/{UserName}",
    async (
        [FromRoute] string UserName,

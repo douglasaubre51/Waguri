@@ -14,5 +14,8 @@
 
         public string? GetProjectUrl(HttpContext context)
             => context.Session.GetString("projectUrl");
+
+        public string? GetApiUrl(HttpContext context)
+            => context.Session.GetString("apiUrl");
     }
 }

@@ -10,7 +10,10 @@ namespace Api.Services
         {
             var response = await _client.PostAsJsonAsync<UserDto>(url, user);
             if (response.IsSuccessStatusCode is false)
+            {
+                Console.WriteLine("status code: " + response.StatusCode);
                 return false;
+            }
 
             return true;
         }
