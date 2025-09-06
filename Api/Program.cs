@@ -5,14 +5,9 @@ using Api.Models;
 using Api.Repositories;
 using Api.Services;
 using Api.Wrappers;
-using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using MimeKit;
-using System.Diagnostics;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,7 +62,8 @@ builder.Services.AddScoped<ClientStorageService>();
 var app = builder.Build();
 
 // https
-app.UseHttpsRedirection();
+// disable so non https clients can connect! like springboot!
+//app.UseHttpsRedirection();
 
 // css,js etc 
 app.UseStaticFiles();
@@ -94,42 +90,13 @@ app.MapControllerRoute(
     );
 
 
-// start
-app.MapGet("/", () => "waguri says hello!");
-
 // AIRA endpoints
+
 // waguri status
 
-app.MapGet("/hello", () => "live");
+app.MapGet("/hello", () => Results.Ok());
 
 // find user
-
-app.MapGet(
-    "/find-user/{userId}",
-    async (
-       [FromRoute] string userId,
-       [FromServices] UserManager<User> _userManager
-        ) =>
-{
-    try
-    {
-        User? user = await _userManager.FindByIdAsync(userId);
-        if (user is null)
-            return Results.NotFound();
-
-        return Results.Ok(new
-        {
-            user.FirstName,
-            user.LastName,
-            user.Email
-        });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"findUser error: {ex}");
-        return Results.InternalServerError();
-    }
-});
 
 app.MapGet(
     "/user/find/{emailId}",
@@ -142,9 +109,7 @@ app.MapGet(
     {
         User? user = await _userManager.FindByEmailAsync(emailId);
         if (user is null)
-        {
             return Results.NotFound();
-        }
 
         return Results.Ok(new
         {
@@ -155,21 +120,21 @@ app.MapGet(
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"findUser error: {ex}");
-        return Results.InternalServerError();
+        Console.WriteLine($"aira userFind error: {ex.Message}");
+        return Results.InternalServerError(ex.Message);
     }
 });
 
-// get all user account details
+// get all users
 
-app.MapGet("/get-all-users",
+app.MapGet(
+    "/user/all",
     async (
         [FromServices] ApplicationDbContext dbContext
         ) =>
     {
         try
         {
-            // get user details from Users table
             var users = await dbContext.Users.ToListAsync();
             List<UserDto> dto = [];
             foreach (var u in users)
@@ -184,33 +149,32 @@ app.MapGet("/get-all-users",
                     ProjectId = u.ProjectId
                 });
             }
-
             UserDtoList dtoList = new()
             {
                 Users = dto
             };
+
             return Results.Ok(dtoList);
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
-            return Results.InternalServerError();
+            Console.WriteLine("aira getAllUsers: " + ex.Message);
+            return Results.InternalServerError(ex.Message);
         }
     });
 
-// sign up
+// create user
 
 app.MapPost(
-    "/sign-up",
+    "/user/create",
     async (
     [FromBody] SignUpDto dto,
-    [FromServices] UserManager<User> _userManager
+    [FromServices] UserManager<User> _userManager,
+    [FromServices] AuthService _authService
     ) =>
 {
     try
     {
-        Debug.WriteLine($"username: {dto.Email}");
-
         var user = new User
         {
             UserName = dto.Email,
@@ -223,54 +187,18 @@ app.MapPost(
         IdentityResult? result = await _userManager.CreateAsync(user, dto.Password);
         if (result.Succeeded is false)
         {
-            Debug.WriteLine($"account for {dto.Email} couldnot be created!");
-            foreach (var e in result.Errors)
-                Debug.WriteLine(e.Description);
+            Console.WriteLine($"account for {dto.Email} couldnot be created!");
             return Results.BadRequest(result.Errors);
         }
 
-        // send confirmation email
-        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-        var callbackUrl = $"http://localhost:5000/sign-up/confirm/{user.Id}/{code}";
-        var appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD");
-        var senderMail = "douglasaubre@gmail.com";
-        var senderName = "douglas aubre";
-        // craft email
-        var email = new MimeMessage();
-        email.From.Add(
-            new MailboxAddress(senderName, senderMail)
-            );
-        email.To.Add(
-            new MailboxAddress(user.FirstName, user.Email)
-            );
-        email.Subject = "Waguri account confirmation";
-        email.Body = new TextPart("html")
-        {
-            Text = $"<h1>Confirmation code :</h1><strong>{callbackUrl}</strong><br>only lasts for a day!"
-        };
-        // mail client
-        Debug.WriteLine($"sending email to : {user.Email}");
-        using var smtpClient = new SmtpClient();
-        await smtpClient.ConnectAsync(
-            "smtp.gmail.com",
-            587,
-            MailKit.Security.SecureSocketOptions.StartTls
-            );
-        await smtpClient.AuthenticateAsync(
-            senderMail,
-            appPassword
-            );
-        await smtpClient.SendAsync(email);
-        Debug.WriteLine($"email has been sent to : {user.Email}");
-        await smtpClient.DisconnectAsync(true);
+        await _authService.GetConfirmationEmail(user);
 
         return Results.Ok();
     }
     catch (Exception ex)
     {
-        Debug.WriteLine($"SignIn error:\n{ex}");
-        return Results.InternalServerError();
+        Console.WriteLine($"aira userCreate error: {ex.Message}");
+        return Results.InternalServerError(ex.Message);
     }
 });
 
@@ -293,14 +221,15 @@ app.MapGet(
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"ConfirmUser error:\n{ex}");
-            return Results.InternalServerError();
+            Console.WriteLine($"aira ConfirmUser error: {ex.Message}");
+            return Results.InternalServerError(ex.Message);
         }
     });
 
 // delete user account
 
-app.MapGet("/user/delete/{UserName}",
+app.MapGet(
+    "/user/delete/{UserName}",
    async (
        [FromRoute] string UserName,
        [FromServices] UserManager<User> _userManager
@@ -316,12 +245,12 @@ app.MapGet("/user/delete/{UserName}",
         if (result.Succeeded is false)
             return Results.BadRequest("account {UserName} couldnt be deleted!");
 
-        // success
         return Results.Ok($"account {UserName} deleted!");
     }
     catch (Exception ex)
     {
-        return Results.InternalServerError(ex);
+        Console.WriteLine("aira userDelete error: " + ex.Message);
+        return Results.InternalServerError(ex.Message);
     }
 });
 
