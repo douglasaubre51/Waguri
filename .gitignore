@@ -363,3 +363,25 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 .vscode/tasks.json
+
+# Vim swap files
+*.swp
+*.swo
+*.swm
+
+# Vim backup files
+*.bak
+*.tmp
+*.orig
+
+# Vim session files
+Session.vim
+
+# Persistent undo
+*.un~
+
+# Tag files
+tags
+
+.netrwhist
+

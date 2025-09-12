@@ -24,12 +24,14 @@ builder.Services.AddControllersWithViews();
 // load env variables
 DotNetEnv.Env.Load();
 
+string connectionString = Environment.GetEnvironmentVariable("WAGURI_DB_STRING");
+
 // add connection to waguridb
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("WaguriDataString")
-        )
-    );
+    options.UseMySql(
+        Environment.GetEnvironmentVariable("WAGURI_DB_STRING"), ServerVersion.AutoDetect(connectionString)
+    )
+);
 
 // add identity framework
 builder.Services
