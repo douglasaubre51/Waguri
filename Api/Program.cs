@@ -28,8 +28,9 @@ string connectionString = Environment.GetEnvironmentVariable("WAGURI_DB_STRING")
 
 // add connection to waguridb
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        Environment.GetEnvironmentVariable("WAGURI_DB_STRING"), ServerVersion.AutoDetect(connectionString)
+    options.UseNpgsql(
+        Environment.GetEnvironmentVariable("WAGURI_DB_STRING"),
+		o => o.EnableRetryOnFailure()
     )
 );
 
