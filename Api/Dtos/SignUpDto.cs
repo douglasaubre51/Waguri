@@ -1,14 +1,14 @@
 ﻿namespace Api.Dtos
 {
-    public record SignUpDto
+    public class SignUpDto
     {
-        public required string FirstName { get; init; }
-        public required string LastName { get; init; }
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
 
 
-        public required string Email { get; init; }
-        public required string Password { get; init; }
+        public required string Email { get; set; }
+        public required string Password { get; set; }
 
-        public required string ProjectId { get; init; }
+        public required string ProjectId { get; set; }
     }
 }

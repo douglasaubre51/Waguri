@@ -178,6 +178,10 @@ app.MapPost(
 {
     try
     {
+
+		Console.WriteLine($"creating user ...");
+		Console.WriteLine($"user password: {dto.Password}");
+
         var user = new User
         {
             UserName = dto.Email,
