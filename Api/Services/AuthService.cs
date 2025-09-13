@@ -15,8 +15,13 @@ namespace Api.Services
         {
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-            var callbackUrl = $"https://localhost:7140/Auth/ConfirmEmail/{user.Id}/{code}";
+
+			string urlBase = Environment.GetEnvironmentVariable("WAGURI_BASE_URI");
+
+            var callbackUrl = $"{urlBase}/Auth/ConfirmEmail/{user.Id}/{code}";
+
             var appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD");
+
             var senderMail = "douglasaubre@gmail.com";
             var senderName = "douglas aubre";
 
