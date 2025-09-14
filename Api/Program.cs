@@ -325,5 +325,24 @@ app.MapPost("/project/create",
 }
 );
 
+app.MapGet(
+	"/project/remove/{id}",
+	(
+		[FromRoute] String id,
+		[FromServices] ClientRepository _clientRepo
+	) => {
+		try{
+
+			_clientRepo.RemoveByProjectId(id);
+
+			return Results.Ok();
+		}
+		catch(Exception ex){
+			Console.WriteLine("RemoveProject error: "+ex.Message);
+			return Results.InternalServerError();
+		}
+	}
+);
+
 
 app.Run();
