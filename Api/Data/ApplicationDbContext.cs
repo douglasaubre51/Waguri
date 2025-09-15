@@ -9,5 +9,5 @@ namespace Api.Data
         : IdentityDbContext<User>(options)
     {
         public DbSet<Client> Clients { get; set; }
-}
+    }
 }

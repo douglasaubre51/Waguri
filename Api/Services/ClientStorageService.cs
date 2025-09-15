@@ -6,16 +6,16 @@ namespace Api.Services
     {
         private readonly HttpClient _client = new();
 
-    public async Task<bool> CreateUserOnClient(string url, UserDto user)
-    {
-        var response = await _client.PostAsJsonAsync<UserDto>(url, user);
-        if (response.IsSuccessStatusCode is false)
+        public async Task<bool> CreateUserOnClient(string url, UserDto user)
         {
-            Console.WriteLine("status code: " + response.StatusCode);
-            return false;
-        }
+            var response = await _client.PostAsJsonAsync<UserDto>(url, user);
+            if (response.IsSuccessStatusCode is false)
+            {
+                Console.WriteLine("status code: " + response.StatusCode);
+                return false;
+            }
 
-        return true;
+            return true;
+        }
     }
-}
 }
