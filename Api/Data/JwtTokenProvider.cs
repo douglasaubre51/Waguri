@@ -13,35 +13,35 @@ namespace Api.Data
             string audience,
             string issuer
             )
-    {
-        // security key
-        var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
-        SymmetricSecurityKey securityKey =
-            new(Encoding.UTF8.GetBytes(secretKey));
-        SigningCredentials credentials = new(
-            securityKey,
-            SecurityAlgorithms.HmacSha256
-            );
+        {
+            // security key
+            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            SymmetricSecurityKey securityKey =
+                new(Encoding.UTF8.GetBytes(secretKey));
+            SigningCredentials credentials = new(
+                securityKey,
+                SecurityAlgorithms.HmacSha256
+                );
 
-        JwtSecurityToken tokenDescriptor = new(
-            // payload
-            issuer: issuer,
-            claims: [
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            JwtSecurityToken tokenDescriptor = new(
+                // payload
+                issuer: issuer,
+                claims: [
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("email_confirmed", user.EmailConfirmed.ToString()),
                 new Claim(JwtRegisteredClaimNames.Aud, audience)
-            ],
-            expires: DateTime.UtcNow.AddMinutes(
-                _configuration.GetValue<int>("JWT:Expires_After")
-                ),
+                ],
+                expires: DateTime.UtcNow.AddMinutes(
+                    _configuration.GetValue<int>("JWT:Expires_After")
+                    ),
 
-            // add encrypted security key
-            signingCredentials: credentials
-        );
+                // add encrypted security key
+                signingCredentials: credentials
+            );
 
-        var handler = new JwtSecurityTokenHandler();
-        return handler.WriteToken(tokenDescriptor);
+            var handler = new JwtSecurityTokenHandler();
+            return handler.WriteToken(tokenDescriptor);
+        }
     }
-}
 }

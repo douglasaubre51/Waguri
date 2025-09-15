@@ -28,21 +28,21 @@ string connectionString = Environment.GetEnvironmentVariable("WAGURI_DB_STRING")
 
 // add connection to waguridb
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(
-                        Environment.GetEnvironmentVariable("WAGURI_DB_STRING"),
-                        o => o.EnableRetryOnFailure()
-                        )
-                );
+    options.UseNpgsql(
+        Environment.GetEnvironmentVariable("WAGURI_DB_STRING"),
+        o => o.EnableRetryOnFailure()
+        )
+    );
 
 // add identity framework
 builder.Services
 .AddIdentity<User, IdentityRole>(options =>
-                {
-                    options.SignIn.RequireConfirmedAccount = true;
-                    options.User.RequireUniqueEmail = true;
-                })
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+        options.User.RequireUniqueEmail = true;
+    })
 .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
+    .AddDefaultTokenProviders();
 
 // jwt auth
 builder.Services.AddAuthentication().AddJwtBearer();
@@ -88,9 +88,9 @@ app.MapControllers();
 
 // default route
 app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Auth}/{action=Login}/{id?}"
-                );
+    name: "default",
+    pattern: "{controller=Auth}/{action=Login}/{id?}"
+    );
 
 
 // AIRA endpoints
@@ -102,247 +102,250 @@ app.MapGet("/hello", () => Results.Ok());
 // find user
 
 app.MapGet(
-                "/user/find/{emailId}",
-                async(
+    "/user/find/{emailId}",
+    async (
 
-                        [FromRoute] string emailId,
+    [FromRoute] string emailId,
 
-                        [FromServices] UserManager < User > _userManager
-                      ) =>
-						{
-    try
+    [FromServices] UserManager<User> _userManager
+    ) =>
     {
-        User? user = await _userManager.FindByEmailAsync(emailId);
-        if (user is null)
-            return Results.NotFound();
-
-        return Results.Ok(new
+        try
         {
-            user.FirstName,
-            user.LastName,
-            user.Email
-        });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"aira userFind error: {ex.Message}");
-        return Results.InternalServerError(ex.Message);
-    }
-});
+            User? user = await _userManager.FindByEmailAsync(emailId);
+            if (user is null)
+                return Results.NotFound();
+
+            return Results.Ok(new
+            {
+                user.FirstName,
+                user.LastName,
+                user.Email
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"aira userFind error: {ex.Message}");
+            return Results.InternalServerError(ex.Message);
+        }
+    });
 
 // get all users
 
 app.MapGet(
-                "/user/all",
-                async(
+    "/user/all",
+    async (
 
-                        [FromServices] ApplicationDbContext dbContext
-                      ) =>
-				{
-    try
+        [FromServices] ApplicationDbContext dbContext
+        ) =>
     {
-        var users = await dbContext.Users.ToListAsync();
-        List<UserDto> dto = [];
-        foreach (var u in users)
+        try
         {
-            dto.Add(new UserDto
+            var users = await dbContext.Users.ToListAsync();
+            List<UserDto> dto = [];
+            foreach (var u in users)
             {
-                UserName = u.UserName,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                Email = u.Email,
-                EmailConfirmed = u.EmailConfirmed,
-                ProjectId = u.ProjectId
-            });
-        }
-        UserDtoList dtoList = new()
-        {
-            Users = dto
-        };
+                dto.Add(new UserDto
+                {
+                    UserName = u.UserName,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    EmailConfirmed = u.EmailConfirmed,
+                    ProjectId = u.ProjectId
+                });
+            }
+            UserDtoList dtoList = new()
+            {
+                Users = dto
+            };
 
-        return Results.Ok(dtoList);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("aira getAllUsers: " + ex.Message);
-        return Results.InternalServerError(ex.Message);
-    }
-});
+            return Results.Ok(dtoList);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("aira getAllUsers: " + ex.Message);
+            return Results.InternalServerError(ex.Message);
+        }
+    });
 
 // create user
 
 app.MapPost(
-                "/user/create",
-                async(
+    "/user/create",
+    async (
 
-                        [FromBody] SignUpDto dto,
+        [FromBody] SignUpDto dto,
 
-                        [FromServices] UserManager < User > _userManager,
+        [FromServices] UserManager<User> _userManager,
 
-                        [FromServices] AuthService _authService
-                      ) =>
-				{
-    try
+        [FromServices] AuthService _authService
+        ) =>
     {
-
-        Console.WriteLine($"creating user ...");
-        Console.WriteLine($"user password: {dto.Password}");
-
-        var user = new User
+        try
         {
-            UserName = dto.Email,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email,
-            ProjectId = dto.ProjectId
-        };
 
-        IdentityResult? result = await _userManager.CreateAsync(user, dto.Password);
-        if (result.Succeeded is false)
-        {
-            Console.WriteLine($"account for {dto.Email} couldnot be created!");
-            return Results.BadRequest(result.Errors);
+            Console.WriteLine($"creating user ...");
+            Console.WriteLine($"user password: {dto.Password}");
+
+            var user = new User
+            {
+                UserName = dto.Email,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                ProjectId = dto.ProjectId
+            };
+
+            IdentityResult? result = await _userManager.CreateAsync(user, dto.Password);
+            if (result.Succeeded is false)
+            {
+                Console.WriteLine($"account for {dto.Email} couldnot be created!");
+                return Results.BadRequest(result.Errors);
+            }
+
+            await _authService.GetConfirmationEmail(user);
+
+            return Results.Ok();
         }
-
-        await _authService.GetConfirmationEmail(user);
-
-        return Results.Ok();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"aira userCreate error: {ex.Message}");
-        return Results.InternalServerError(ex.Message);
-    }
-});
+        catch (Exception ex)
+        {
+            Console.WriteLine($"aira userCreate error: {ex.Message}");
+            return Results.InternalServerError(ex.Message);
+        }
+    });
 
 // trigger confirm user account
 
 app.MapGet(
-                "/user/confirm/{userName}",
-                async(
+    "/user/confirm/{userName}",
+    async (
 
-                        [FromRoute] string userName,
+        [FromRoute] string userName,
 
-                        [FromServices] UserManager < User > _userManager,
+        [FromServices] UserManager<User> _userManager,
 
-                        [FromServices] AuthService _authService
-                      ) =>
-				{
-    try
+        [FromServices] AuthService _authService
+        ) =>
     {
-        var user = await _userManager.FindByNameAsync(userName);
-        await _authService.GetConfirmationEmail(user);
+        try
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            await _authService.GetConfirmationEmail(user);
 
-        return Results.Ok();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"aira ConfirmUser error: {ex.Message}");
-        return Results.InternalServerError(ex.Message);
-    }
-});
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"aira ConfirmUser error: {ex.Message}");
+            return Results.InternalServerError(ex.Message);
+        }
+    });
 
 // delete user account
 
 app.MapGet(
-                "/user/delete/{UserName}",
-                async(
-
-                        [FromRoute] string UserName,
-
-                        [FromServices] UserManager < User > _userManager
-                      ) =>
-				{
-    try
+    "/user/delete/{email}",
+    async (
+        [FromRoute] string email,
+        [FromServices] UserManager<User> _userManager
+        ) =>
     {
-        var user = await _userManager.FindByNameAsync(UserName);
-        if (user is null)
-            return Results.NotFound($"account {UserName} not found!");
+        try
+        {
+            var user = await _userManager.FindByNameAsync(email);
+            if (user is null)
+                return Results.NotFound($"account {email} not found!");
 
-        var result = await _userManager.DeleteAsync(user);
-        if (result.Succeeded is false)
-            return Results.BadRequest("account {UserName} couldnt be deleted!");
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded is false)
+                return Results.BadRequest("account {email} couldnt be deleted!");
 
-        return Results.Ok($"account {UserName} deleted!");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("aira userDelete error: " + ex.Message);
-        return Results.InternalServerError(ex.Message);
-    }
-});
+            return Results.Ok($"account {email} deleted!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("aira userDelete error: " + ex.Message);
+            return Results.InternalServerError(ex.Message);
+        }
+    });
 
 // project endpoints
 
 app.MapGet("/project/all",
-                (
+    (
 
-                 [FromServices] ClientRepository _clientRepo
-                )=>{
-    try
+     [FromServices] ClientRepository _clientRepo
+    ) =>
     {
+        try
+        {
 
-        ClientDtoList dto = new();
-        dto.Clients = _clientRepo.GetAll();
+            ClientDtoList dto = new();
+            dto.Clients = _clientRepo.GetAll();
 
-        return Results.Ok(dto);
+            return Results.Ok(dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"GetAllProjects error: {ex.Message}");
+            return Results.InternalServerError(ex.Message);
+        }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"GetAllProjects error: {ex.Message}");
-        return Results.InternalServerError(ex.Message);
-    }
-}
-		  );
+    );
 
 app.MapPost("/project/create",
-                (
-                 [FromBody] Api.Dtos.ClientDto dto,
-                 [FromServices] ClientRepository _clientRepo
-                ) => {
-    try
+    (
+     [FromBody] Api.Dtos.ClientDto dto,
+     [FromServices] ClientRepository _clientRepo
+    ) =>
     {
-        Console.WriteLine("Project Id: " + dto.ProjectId);
-        Console.WriteLine("Api Url: " + dto.ApiUrl);
-        Console.WriteLine("Url: " + dto.Url);
-
-        var client = new Client
+        try
         {
-            ApiUrl = dto.ApiUrl,
-            Url = dto.Url,
-            ProjectId = dto.ProjectId
-        };
+            Console.WriteLine("Project Id: " + dto.ProjectId);
+            Console.WriteLine("Api Url: " + dto.ApiUrl);
+            Console.WriteLine("Url: " + dto.Url);
 
-        _clientRepo.Create(client);
+            var client = new Client
+            {
+                ApiUrl = dto.ApiUrl,
+                Url = dto.Url,
+                ProjectId = dto.ProjectId
+            };
 
-        return Results.Ok();
+            _clientRepo.Create(client);
+
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("CreateProjects error: " + ex.Message);
+            return Results.InternalServerError();
+        }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine("CreateProjects error: " + ex.Message);
-        return Results.InternalServerError();
-    }
-}
 );
 
 app.MapGet(
-	"/project/remove/{id}",
-	(
-		[FromRoute] String id,
-		[FromServices] ClientRepository _clientRepo
-	) => {
-		try{
+    "/project/remove/{id}",
+    (
+     [FromRoute] String id,
+     [FromServices] ClientRepository _clientRepo
+    ) =>
+    {
+        try
+        {
 
-			_clientRepo.RemoveByProjectId(id);
+            _clientRepo.RemoveByProjectId(id);
 
-			return Results.Ok();
-		}
-		catch(Exception ex){
-			Console.WriteLine("RemoveProject error: "+ex.Message);
-			return Results.InternalServerError();
-		}
-	}
-);
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("RemoveProject error: " + ex.Message);
+            return Results.InternalServerError();
+        }
+    }
+    );
 
 
 app.Run();
