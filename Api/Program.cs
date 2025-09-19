@@ -6,7 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
 
 // session
-builder.Services.AddSession();
+builder.Services.AddSession(options => {
+	options.IdleTimeout = TimeSpan.FromHours(12);
+	options.Cookie.Name = ".WAGURI.Session";
+});
 
 // swagger
 builder.Services.AddEndpointsApiExplorer();
