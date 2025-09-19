@@ -2,6 +2,9 @@ using Api.Dtos.AiraDtos;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add SignalR
+builder.Services.AddSignalR();
+
 // session
 builder.Services.AddSession();
 
@@ -76,6 +79,9 @@ app.UseSwaggerUI();
 
 // mvc controller routing
 app.MapControllers();
+
+// Add SignalR hubs
+app.MapHub<NativeAuthHub>("/native-auth");
 
 // default route
 app.MapControllerRoute(
