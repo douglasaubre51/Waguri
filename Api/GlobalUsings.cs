@@ -10,6 +10,7 @@ global using Microsoft.EntityFrameworkCore;
 global using Microsoft.IdentityModel.Tokens;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.WebUtilities;
+global using Microsoft.AspNetCore.SignalR;
 
 global using Api.Data;
 global using Api.Dtos;
@@ -18,6 +19,7 @@ global using Api.Repositories;
 global using Api.Services;
 global using Api.ViewModels;
 global using Api.Wrappers;
+global using Api.Hubs;
 
 global using MailKit.Net.Smtp;
 global using MimeKit;
