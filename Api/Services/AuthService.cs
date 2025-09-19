@@ -1,11 +1,4 @@
-﻿using Api.Models;
-using MailKit.Net.Smtp;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.WebUtilities;
-using MimeKit;
-using System.Text;
-
-namespace Api.Services
+﻿namespace Api.Services
 {
     public class AuthService(UserManager<User> userManager)
     {

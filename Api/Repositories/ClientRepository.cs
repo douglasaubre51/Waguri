@@ -1,7 +1,4 @@
-﻿using Api.Data;
-using Api.Models;
-
-namespace Api.Repositories
+﻿namespace Api.Repositories
 {
     public class ClientRepository(ApplicationDbContext context)
     {

@@ -1,7 +1,4 @@
-﻿using Api.Services;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Api.Controllers
+﻿namespace Api.Controllers
 {
     public class ErrorController(SessionService sessionService) : Controller
     {

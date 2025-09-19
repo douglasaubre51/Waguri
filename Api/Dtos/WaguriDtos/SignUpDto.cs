@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Api.Dtos.WaguriDtos
+﻿namespace Api.Dtos.WaguriDtos
 {
     public class SignUpDto
     {

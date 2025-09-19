@@ -1,13 +1,4 @@
-using Api.Data;
-using Api.Dtos;
 using Api.Dtos.AiraDtos;
-using Api.Models;
-using Api.Repositories;
-using Api.Services;
-using Api.Wrappers;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 

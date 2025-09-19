@@ -1,7 +1,7 @@
-﻿namespace Api.Controllers
+namespace Api.Controllers
 {
     [Route("/api/[controller]")]
-    public class AuthController(
+    public class NativeAuthController(
         UserManager<User> userManager,
         SignInManager<User> signInManager,
         JwtTokenProvider jwtTokenProvider,
