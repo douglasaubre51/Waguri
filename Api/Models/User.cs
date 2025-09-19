@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace Api.Models
+﻿namespace Api.Models
 {
     public class User : IdentityUser
     {

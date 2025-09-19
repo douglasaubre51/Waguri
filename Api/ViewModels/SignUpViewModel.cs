@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Api.ViewModels
+﻿namespace Api.ViewModels
 {
     public class SignUpViewModel
     {
