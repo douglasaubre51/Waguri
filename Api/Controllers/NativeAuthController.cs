@@ -1,5 +1,6 @@
 namespace Api.Controllers
 {
+	[Route("/api/[controller]")]
     public class NativeAuthController(
         UserManager<User> userManager,
         SignInManager<User> signInManager,
