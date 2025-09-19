@@ -1,0 +1,58 @@
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+@model Api.ViewModels.LoginViewModel
+
+<link href="~/css/Login.css" rel="stylesheet" />
+
+<title>
+    Login
+</title>
+
+<div class='container'>
+    <div class="header-container">
+        <span class='header-1'>
+            WAGURI Account
+        </span>
+        <span class="header-2">
+            Login
+        </span>
+    </div>
+
+    @* form container *@
+    <form asp-controller="Auth" asp-action="Login" method="post">
+        <div class="form-container">
+            <div class="form-group">
+                <span class="label">
+                    email id
+                </span>
+                <input class="textbox"
+                       type="email"
+                       asp-for="Email" />
+                <span asp-validation-for="Email"></span>
+            </div>
+
+            <div class="form-group">
+                <span class="label">
+                    password
+                </span>
+                <input class="textbox"
+                       asp-for="Password"
+                       type="password" />
+                <span asp-validation-for="Password"></span>
+            </div>
+            <button type="submit" class="secondary-btn">
+                continue
+            </button>
+            <a class="tertiary-btn"
+               asp-controller="Auth"
+               asp-action="SignUp">
+                don't have an account?
+            </a>
+        </div>
+    </form>
+
+    <span class="error-msg">
+        @Model.ErrorMessage
+    </span>
+</div>
+
+
