@@ -58,6 +58,9 @@ builder.Services.AddScoped<AuthService>();
 // add client storage service
 builder.Services.AddScoped<ClientStorageService>();
 
+// Add Native Auth storage service
+builder.Services.AddSingleton<NativeAuthStorageService>();
+
 
 var app = builder.Build();
 
