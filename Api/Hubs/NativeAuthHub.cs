@@ -14,9 +14,14 @@ namespace Api.Hubs
 		{
 			Console.WriteLine("sending greeting to client ... ");
 
+			await Clients.All.SendAsync(
+				"GetGreeting",
+				"Wait till everyone joined!"
+			);
+
 			await Clients.Client(conn_id).SendAsync(
-				"connected to waguri auth microservice!"
-				+"\nwaiting for user login ..."
+				"GetGreeting",
+				"hola"
 			);
 		}
 	}
