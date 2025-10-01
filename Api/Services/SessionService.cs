@@ -3,11 +3,7 @@
     public class SessionService
     {
         public bool IsExpired(HttpContext context)
-        {
-            if (context.Session.GetString("projectId") is null) return true;
-
-            return false;
-        }
+            => (context.Session.GetString("projectId") is null) ? true : false;
 
         public string? GetProjectId(HttpContext context)
             => context.Session.GetString("projectId");
@@ -17,5 +13,8 @@
 
         public string? GetApiUrl(HttpContext context)
             => context.Session.GetString("apiUrl");
+
+	public string? GetClientGuid(HttpContext context)
+	    => context.Session.GetString("clientGuid");
     }
 }

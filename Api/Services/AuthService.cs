@@ -11,7 +11,7 @@
 
             string urlBase = Environment.GetEnvironmentVariable("WAGURI_BASE_URI");
 
-            var callbackUrl = $"{urlBase}/Auth/ConfirmEmail/{user.Id}/{code}";
+            var callbackUrl = $"{urlBase}/api/Auth/ConfirmEmail/{user.Id}/{code}";
 
             var appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD");
 

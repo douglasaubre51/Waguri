@@ -32,8 +32,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     );
 
 // add identity framework
-builder.Services
-.AddIdentity<User, IdentityRole>(options =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
         options.User.RequireUniqueEmail = true;
@@ -42,22 +41,23 @@ builder.Services
     .AddDefaultTokenProviders();
 
 // jwt auth
-builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthentication()
+    .AddJwtBearer();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenProvider>();
 
 // add repositories
 builder.Services.AddScoped<ClientRepository>();
 
-// add session service
-builder.Services.AddSingleton<SessionService>();
+// add storage services
+builder.Services.AddSingleton<ConnectionStorageService>();
 
-// add auth service
+// add hub services
+builder.Services.AddTransient<NativeAuth>();
+
 builder.Services.AddScoped<AuthService>();
-
-// add client storage service
+builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<ClientStorageService>();
-
 
 var app = builder.Build();
 
@@ -334,7 +334,6 @@ app.MapGet(
     {
         try
         {
-
             _clientRepo.RemoveByProjectId(id);
 
             return Results.Ok();
@@ -345,7 +344,7 @@ app.MapGet(
             return Results.InternalServerError();
         }
     }
-    );
+);
 
 
 app.Run();
