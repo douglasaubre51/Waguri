@@ -15,6 +15,7 @@ global using Microsoft.AspNetCore.SignalR;
 
 global using Api.Data;
 global using Api.Dtos;
+global using Api.Dtos.NativeDtos;
 global using Api.Models;
 global using Api.Repositories;
 global using Api.Services;

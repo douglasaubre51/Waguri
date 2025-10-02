@@ -1,6 +1,6 @@
 ﻿namespace Api.Controllers
 {
-	[Route("/api/[controller]")]
+    [Route("/api/[controller]")]
     public class AuthController(
         UserManager<User> userManager,
         SignInManager<User> signInManager,
@@ -138,12 +138,13 @@
 
         [HttpGet]
         public IActionResult RedirectToLogin()
-        	=> RedirectToAction(
-				"Login",
-				new { 
-					projectId = _sessionService.GetProjectId(HttpContext)
-				}
-		);
+            => RedirectToAction(
+                "Login",
+                new
+                {
+                    projectId = _sessionService.GetProjectId(HttpContext)
+                }
+        );
 
         // processess user token 
         [HttpGet("ConfirmEmail/{userId}/{code}")]

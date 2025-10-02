@@ -1,21 +1,32 @@
 ﻿using Api.Dtos.ClientDtos;
 
-namespace Api.Services
+namespace Api.Services;
+
+public class ClientStorageService()
 {
-    public class ClientStorageService()
+    private readonly HttpClient _client = new();
+
+    public async Task<bool> CreateUserOnClient(string url, UserDto user)
     {
-        private readonly HttpClient _client = new();
-
-        public async Task<bool> CreateUserOnClient(string url, UserDto user)
+        var response = await _client.PostAsJsonAsync<UserDto>(url, user);
+        if (response.IsSuccessStatusCode is false)
         {
-            var response = await _client.PostAsJsonAsync<UserDto>(url, user);
-            if (response.IsSuccessStatusCode is false)
-            {
-                Console.WriteLine("status code: " + response.StatusCode);
-                return false;
-            }
-
-            return true;
+            Console.WriteLine("status code: " + response.StatusCode);
+            return false;
         }
+
+        return true;
+    }
+
+    public async Task<bool> CreateUserOnClient(string url, CreateUser user)
+    {
+        var response = await _client.PostAsJsonAsync<CreateUser>(url, user);
+        if (response.IsSuccessStatusCode is false)
+        {
+            Console.WriteLine("status code: " + response.StatusCode);
+            return false;
+        }
+
+        return true;
     }
 }

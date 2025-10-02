@@ -14,7 +14,7 @@
         public string? GetApiUrl(HttpContext context)
             => context.Session.GetString("apiUrl");
 
-	public string? GetClientGuid(HttpContext context)
-	    => context.Session.GetString("clientGuid");
+        public string? GetClientGuid(HttpContext context)
+            => context.Session.GetString("clientGuid");
     }
 }
