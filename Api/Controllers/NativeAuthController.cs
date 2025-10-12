@@ -83,7 +83,7 @@ public class NativeAuthController(
                 LastName = dbUser.LastName,
                 Email = dbUser.Email
             };
-            url += "/api/user/create";
+            url += "/api/User";
             Console.WriteLine("Client Url: " + url);
             await _clientStorageService.CreateUserOnClient(url, dto);
 
