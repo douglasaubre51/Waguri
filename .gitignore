@@ -385,3 +385,76 @@ tags
 
 .netrwhist
 
+# rider
+## Ignore Visual Studio / Rider / .NET build files
+
+# Build results
+bin/
+obj/
+out/
+TestResults/
+[Bb]uild[Ll]og.*
+
+# Rider specific
+.idea/
+*.sln.iml
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.userprefs
+
+# ASP.NET temporary files
+wwwroot/lib/
+wwwroot/dist/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment and secrets
+*.env
+secrets.json
+
+# Logs
+*.log
+logs/
+
+# Dotnet tools
+*.dbmdl
+*.bak
+*.orig
+*.cache
+*.vspscc
+*.vssscc
+*.nupkg
+*.snupkg
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+.idea/.idea.*
+
+# Others
+_ReSharper*/
+*.DotSettings.user
+.vscode/
+.vs/
+*.swp
+*.tmp
+
+# Publish outputs
+publish/
+*.Publish.xml
+
+# Coverage reports
+coverage/
+*.coverage
+*.coveragexml
+
+# Docker
+docker-compose.override.yml
+.docker/
+
