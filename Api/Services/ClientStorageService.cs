@@ -24,6 +24,9 @@ public class ClientStorageService()
         if (response.IsSuccessStatusCode is false)
         {
             Console.WriteLine("status code: " + response.StatusCode);
+            var message = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("error message: " + message);
+
             return false;
         }
 
