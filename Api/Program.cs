@@ -98,7 +98,7 @@ app.MapControllerRoute(
 
 // waguri status
 
-app.MapGet("/hello", () => Results.Ok());
+app.MapGet("/hello", () => Results.Ok("WAGURI is running..."));
 
 // find user
 
