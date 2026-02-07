@@ -20,7 +20,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllersWithViews();
 
 // load env variables
-DotNetEnv.Env.Load();
 
 string connectionString = Environment.GetEnvironmentVariable("WAGURI_DB_STRING");
 
