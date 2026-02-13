@@ -1,4 +1,5 @@
 using Api.Dtos.AiraDtos;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,8 @@ builder.Services.AddSwaggerGen();
 // Add mvc controllers
 builder.Services.AddControllersWithViews();
 
-// load env variables
+// load env variables; remove in production!
+Env.Load();
 
 string connectionString = Environment.GetEnvironmentVariable("WAGURI_DB_STRING");
 
