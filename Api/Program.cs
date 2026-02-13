@@ -21,7 +21,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllersWithViews();
 
 // load env variables; remove in production!
-Env.Load();
+// Env.Load();
 
 string connectionString = Environment.GetEnvironmentVariable("WAGURI_DB_STRING");
 
